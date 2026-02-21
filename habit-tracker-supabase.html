@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #a8d8ea;
+    --sky-light: #d6eef8;
+    --sky-pale: #eef7fc;
+    --brown: #8b6f5e;
+    --brown-light: #c4a882;
+    --brown-pale: #f5ede6;
+    --cream: #fdf8f3;
+    --blush: #f2c4b8;
+    --mint: #b8dfd0;
+    --lavender: #d4c5e8;
+    --yellow: #fce8a2;
+    --text: #4a3728;
+    --text-muted: #9e7c6a;
+    --text-light: #c4a882;
+    --white: #ffffff;
+    --border: rgba(139,111,94,0.15);
+    --shadow: rgba(139,111,94,0.10);
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    background: var(--sky-pale);
+    min-height: 100vh;
+    padding: 20px 16px 40px;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .widget { max-width: 760px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; padding: 0 2px;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 2px; }
+  .header-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--brown); }
+  .header-sub { font-size: 11px; color: var(--text-muted); }
+  .header-right { display: flex; gap: 6px; align-items: center; }
+  .tab-btn {
+    font-size: 11px; font-weight: 700; padding: 5px 12px;
+    border: 1.5px solid var(--border); background: var(--white);
+    border-radius: 99px; cursor: pointer; color: var(--text-muted);
+    font-family: 'Zen Maru Gothic', sans-serif; transition: all 0.15s ease;
+  }
+  .tab-btn:hover, .tab-btn.active { background: var(--sky-pale); border-color: var(--sky); color: var(--brown); }
+
+  /* Loading overlay */
+  .loading-bar {
+    height: 3px; background: var(--sky-light); border-radius: 99px;
+    margin-bottom: 12px; overflow: hidden;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .loading-bar.visible { opacity: 1; }
+  .loading-bar-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--sky), var(--brown-light));
+    border-radius: 99px;
+    animation: loadingAnim 1.2s ease-in-out infinite;
+  }
+  @keyframes loadingAnim {
+    0% { width: 0%; margin-left: 0; }
+    50% { width: 70%; margin-left: 15%; }
+    100% { width: 0%; margin-left: 100%; }
+  }
+
+  /* Week nav */
+  .week-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; background: var(--white);
+    border: 1.5px solid var(--border); border-radius: var(--radius);
+    padding: 10px 14px; box-shadow: 0 2px 8px var(--shadow);
+  }
+  .week-label { font-size: 13px; font-weight: 700; color: var(--brown); }
+  .week-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  .nav-group { display: flex; gap: 4px; }
+  .nav-btn {
+    width: 28px; height: 28px; border: 1.5px solid var(--border);
+    background: var(--white); border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); transition: all 0.15s ease;
+  }
+  .nav-btn:hover { background: var(--sky-pale); border-color: var(--sky); color: var(--brown); }
+  .nav-btn svg { width: 12px; height: 12px; }
+  .today-chip {
+    font-size: 10px; font-weight: 700; padding: 3px 10px;
+    border: 1.5px solid var(--border); background: var(--white);
+    border-radius: 99px; cursor: pointer; color: var(--text-muted);
+    font-family: 'Zen Maru Gothic', sans-serif; transition: all 0.15s ease;
+  }
+  .today-chip:hover { background: var(--sky-pale); border-color: var(--sky); color: var(--brown); }
+
+  /* Habit table */
+  .habit-card {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 2px 12px var(--shadow); margin-bottom: 10px;
+  }
+  .habit-table { width: 100%; border-collapse: collapse; }
+  .habit-table thead tr {
+    background: rgba(168,216,234,0.08);
+    border-bottom: 1.5px solid var(--border);
+  }
+  .habit-table thead th {
+    padding: 10px 8px; font-size: 10px; font-weight: 700;
+    color: var(--text-muted); text-align: center; letter-spacing: 0.05em;
+  }
+  .habit-table thead th.habit-name-col { text-align: left; padding-left: 14px; }
+  .th-day { min-width: 38px; }
+  .th-day .th-day-name { font-size: 10px; color: var(--text-light); }
+  .th-day .th-day-num { font-family: 'DM Serif Display', serif; font-size: 14px; color: var(--text); line-height: 1.1; }
+  .th-day.is-today .th-day-name, .th-day.is-today .th-day-num { color: var(--sky); }
+  .th-day.is-weekend .th-day-name, .th-day.is-weekend .th-day-num { color: var(--blush); }
+  .habit-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  .habit-table tbody tr:last-child { border-bottom: none; }
+  .habit-table tbody tr:hover { background: var(--sky-pale); }
+  .habit-name-cell { padding: 11px 8px 11px 14px; font-size: 12px; font-weight: 500; color: var(--text); min-width: 140px; }
+  .habit-target { display: block; font-size: 9.5px; color: var(--text-light); font-weight: 400; margin-top: 1px; }
+  .habit-icon { margin-right: 5px; }
+  .check-cell { text-align: center; padding: 6px 4px; }
+  .check-box {
+    width: 28px; height: 28px; border-radius: 8px;
+    border: 1.5px solid var(--text-light); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--white); transition: all 0.15s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .check-box:hover { border-color: var(--sky); background: var(--sky-pale); }
+  .check-box.checked { background: var(--sky); border-color: var(--sky); color: white; transform: scale(1.1); }
+  .check-box svg { width: 13px; height: 13px; opacity: 0; transition: opacity 0.1s; color: white; }
+  .check-box.checked svg { opacity: 1; }
+  .check-box.future { cursor: default; opacity: 0.3; pointer-events: none; }
+  .week-progress-cell { padding: 6px 8px 6px 4px; min-width: 60px; }
+  .week-prog-bar { height: 6px; background: var(--sky-light); border-radius: 99px; overflow: hidden; margin-bottom: 2px; }
+  .week-prog-fill { height: 100%; background: linear-gradient(90deg, var(--sky) 0%, var(--brown-light) 100%); border-radius: 99px; transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  .week-prog-text { font-size: 9px; color: var(--text-muted); text-align: right; }
+  .week-prog-text.goal-met { color: var(--mint); font-weight: 700; }
+
+  /* Summary */
+  .week-summary {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+    box-shadow: 0 2px 8px var(--shadow); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .summary-label { font-size: 11px; color: var(--text-muted); font-weight: 500; white-space: nowrap; }
+  .summary-bar-bg { flex: 1; height: 8px; background: var(--sky-light); border-radius: 99px; overflow: hidden; }
+  .summary-bar-fill { height: 100%; background: linear-gradient(90deg, var(--sky) 0%, var(--brown-light) 100%); border-radius: 99px; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1); min-width: 4px; }
+  .summary-pct { font-size: 13px; font-weight: 700; color: var(--brown); white-space: nowrap; }
+
+  /* History */
+  .history-view { display: none; }
+  .history-view.active { display: block; }
+  .week-view.hidden { display: none; }
+  .month-section { margin-bottom: 20px; }
+  .month-label {
+    font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--brown);
+    margin-bottom: 10px; padding-left: 2px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .month-copy-btn {
+    font-size: 10px; font-weight: 700; padding: 4px 12px;
+    border: 1.5px solid var(--border); background: var(--white);
+    border-radius: 99px; cursor: pointer; color: var(--text-muted);
+    font-family: 'Zen Maru Gothic', sans-serif; transition: all 0.15s;
+  }
+  .month-copy-btn:hover { background: var(--sky-pale); border-color: var(--sky); color: var(--brown); }
+  .month-copy-btn.copied { border-color: var(--mint); color: var(--mint); background: rgba(184,223,208,0.1); }
+  .history-week-row {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 6px;
+    box-shadow: 0 1px 6px var(--shadow);
+  }
+  .hw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .hw-date { font-size: 11px; font-weight: 700; color: var(--brown); }
+  .hw-pct { font-size: 11px; color: var(--text-muted); }
+  .hw-habits { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hw-chip { font-size: 10px; padding: 3px 8px; border-radius: 99px; font-weight: 500; }
+  .hw-chip.met { background: rgba(168,216,234,0.25); color: var(--brown); }
+  .hw-chip.unmet { background: rgba(139,111,94,0.08); color: var(--text-muted); }
+  .empty-history { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px; }
+
+  /* Confetti */
+  .burst { position: fixed; pointer-events: none; z-index: 9999; }
+  .burst span { position: absolute; width: 6px; height: 6px; border-radius: 50%; animation: burst 0.6s ease-out forwards; }
+  @keyframes burst { to { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--brown); color: white; font-size: 12px; font-weight: 500;
+    padding: 8px 18px; border-radius: 99px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    opacity: 0; transition: all 0.3s ease; pointer-events: none; z-index: 9999;
+    font-family: 'Zen Maru Gothic', sans-serif;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="widget">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-title">Habit Tracker ✦</div>
+      <div class="header-sub" id="headerSub">読み込み中...</div>
+    </div>
+    <div class="header-right">
+      <button class="tab-btn active" id="tabWeek" onclick="switchTab('week')">今週</button>
+      <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">履歴</button>
+    </div>
+  </div>
+
+  <div class="loading-bar" id="loadingBar"><div class="loading-bar-fill"></div></div>
+
+  <!-- Week view -->
+  <div id="weekView">
+    <div class="week-nav">
+      <div>
+        <div class="week-label" id="weekLabel">—</div>
+        <div class="week-sub" id="weekSub">—</div>
+      </div>
+      <div class="nav-group">
+        <button class="nav-btn" onclick="moveWeek(-1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button class="today-chip" onclick="goToday()">今週</button>
+        <button class="nav-btn" onclick="moveWeek(1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="week-summary">
+      <span class="summary-label">週間達成率</span>
+      <div class="summary-bar-bg"><div class="summary-bar-fill" id="summaryFill" style="width:0%"></div></div>
+      <span class="summary-pct" id="summaryPct">—</span>
+    </div>
+    <div class="habit-card">
+      <table class="habit-table">
+        <thead>
+          <tr>
+            <th class="habit-name-col">習慣</th>
+            <th id="thMon" class="th-day"></th>
+            <th id="thTue" class="th-day"></th>
+            <th id="thWed" class="th-day"></th>
+            <th id="thThu" class="th-day"></th>
+            <th id="thFri" class="th-day"></th>
+            <th id="thSat" class="th-day"></th>
+            <th id="thSun" class="th-day"></th>
+            <th style="min-width:60px;font-size:10px;color:var(--text-muted);">達成</th>
+          </tr>
+        </thead>
+        <tbody id="habitTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- History view -->
+  <div class="history-view" id="historyView">
+    <div id="historyContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase Config ──
+const SUPABASE_URL = 'https://nbduyknklcwqbinvhoih.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iZHV5a25rbGN3cWJpbnZob2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NjMzNjUsImV4cCI6MjA4NzIzOTM2NX0.kzZYqBwfc8vpGszN2W3so2jURsZXlrve4KvUydYKIfA';
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    },
+    ...options
+  });
+  if (res.status === 204) return null;
+  if (!res.ok) { const err = await res.text(); throw new Error(err); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ── Habits Config ──
+const HABITS = [
+  { id: 'weight',  icon: '⚖️', name: '体重記録',    target: 1, unit: '週1回' },
+  { id: 'sleep23', icon: '🌙', name: '23:30就寝',   target: 4, unit: '週4日' },
+  { id: 'wake45',  icon: '☀️', name: '45分前起床',  target: 3, unit: '週3日' },
+  { id: 'stretch', icon: '🤸', name: '朝ストレッチ', target: 1, unit: '週1回' },
+  { id: 'sleep7',  icon: '💤', name: '睡眠7時間',   target: 3, unit: '週3日' },
+  { id: 'korean',  icon: '🇰🇷', name: '韓国語勉強',  target: 3, unit: '週3日' },
+];
+
+const DAY_NAMES_JP = ['日','月','火','水','木','金','土'];
+const MONTHS_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_JP = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+// ── State ──
+let currentWeekStart = getMonday(new Date());
+let currentTab = 'week';
+let data = {};
+
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = (day === 0) ? -6 : 1 - day;
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+function dateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getWeekDays(monday) {
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday); d.setDate(d.getDate() + i); days.push(d);
+  }
+  return days;
+}
+
+function isToday(d) {
+  const t = new Date();
+  return d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth() && d.getDate()===t.getDate();
+}
+
+function isFuture(d) {
+  const t = new Date(); t.setHours(0,0,0,0); return d > t;
+}
+
+// ── Supabase ──
+function setLoading(val) {
+  document.getElementById('loadingBar').classList.toggle('visible', val);
+}
+
+async function loadWeekData(monday) {
+  const days = getWeekDays(monday);
+  const from = dateKey(days[0]);
+  const to = dateKey(days[6]);
+  setLoading(true);
+  try {
+    const rows = await sbFetch(`habit_logs?date=gte.${from}&date=lte.${to}&select=date,habit_id,checked`);
+    (rows || []).forEach(r => {
+      if (!data[r.date]) data[r.date] = {};
+      data[r.date][r.habit_id] = r.checked;
+    });
+    document.getElementById('headerSub').textContent = '今週の習慣を記録しよう ✦';
+  } catch(e) {
+    showToast('読み込みエラー。接続を確認してください。');
+    document.getElementById('headerSub').textContent = '接続エラー';
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function loadAllData() {
+  setLoading(true);
+  try {
+    const rows = await sbFetch(`habit_logs?select=date,habit_id,checked&order=date.desc`);
+    data = {};
+    (rows || []).forEach(r => {
+      if (!data[r.date]) data[r.date] = {};
+      data[r.date][r.habit_id] = r.checked;
+    });
+  } catch(e) {
+    showToast('読み込みエラー。接続を確認してください。');
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function upsertCheck(habitId, dateStr, val) {
+  try {
+    await sbFetch(`habit_logs`, {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ date: dateStr, habit_id: habitId, checked: val, updated_at: new Date().toISOString() })
+    });
+  } catch(e) {
+    showToast('保存エラー: ' + e.message);
+  }
+}
+
+function getCheck(habitId, dateStr) {
+  return !!(data[dateStr] && data[dateStr][habitId]);
+}
+
+// ── Render week header ──
+function renderWeekHeader(days) {
+  const ids = ['thMon','thTue','thWed','thThu','thFri','thSat','thSun'];
+  days.forEach((d, i) => {
+    const el = document.getElementById(ids[i]);
+    const isWknd = d.getDay()===0 || d.getDay()===6;
+    let cls = 'th-day';
+    if (isToday(d)) cls += ' is-today';
+    if (isWknd) cls += ' is-weekend';
+    el.className = cls;
+    el.innerHTML = `<div class="th-day-name">${DAY_NAMES_JP[d.getDay()]}</div><div class="th-day-num">${d.getDate()}</div>`;
+  });
+}
+
+// ── Render habit rows ──
+function renderHabits(days) {
+  const tbody = document.getElementById('habitTbody');
+  let html = '';
+  HABITS.forEach(h => {
+    let checked = 0;
+    let cells = '';
+    days.forEach(d => {
+      const dk = dateKey(d);
+      const chk = getCheck(h.id, dk);
+      const future = isFuture(d);
+      if (chk) checked++;
+      const cls = 'check-box' + (future ? ' future' : (chk ? ' checked' : ''));
+      const onclick = future ? '' : `onclick="toggleCheck('${h.id}','${dk}',this)"`;
+      cells += `<td class="check-cell">
+        <div class="${cls}" ${onclick}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+      </td>`;
+    });
+    const pct = Math.round(checked / h.target * 100);
+    const met = checked >= h.target;
+    const barW = Math.min(100, pct);
+    html += `<tr>
+      <td class="habit-name-cell"><span class="habit-icon">${h.icon}</span>${h.name}<span class="habit-target">${h.unit}</span></td>
+      ${cells}
+      <td class="week-progress-cell">
+        <div class="week-prog-bar"><div class="week-prog-fill" style="width:${barW}%"></div></div>
+        <div class="week-prog-text ${met?'goal-met':''}">${checked}/${h.target}${met?' ✓':''}</div>
+      </td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+// ── Toggle ──
+async function toggleCheck(habitId, dateStr, el) {
+  const cur = getCheck(habitId, dateStr);
+  const next = !cur;
+  if (!data[dateStr]) data[dateStr] = {};
+  data[dateStr][habitId] = next;
+  if (next) { el.classList.add('checked'); spawnBurst(el); }
+  else { el.classList.remove('checked'); }
+  renderSummary(getWeekDays(currentWeekStart));
+  renderHabits(getWeekDays(currentWeekStart));
+  await upsertCheck(habitId, dateStr, next);
+}
+
+// ── Summary ──
+function renderSummary(days) {
+  let total = 0, done = 0;
+  HABITS.forEach(h => {
+    days.forEach(d => {
+      if (!isFuture(d)) { total++; if (getCheck(h.id, dateKey(d))) done++; }
+    });
+  });
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('summaryFill').style.width = pct + '%';
+  document.getElementById('summaryPct').textContent = total > 0 ? `${done}/${total} (${pct}%)` : '記録待ち';
+}
+
+// ── Week label ──
+function renderWeekLabel(monday) {
+  const end = new Date(monday); end.setDate(end.getDate() + 6);
+  document.getElementById('weekLabel').textContent =
+    `${MONTHS_EN[monday.getMonth()]} ${monday.getDate()} – ${end.getDate()}, ${end.getFullYear()}`;
+  const isCurrent = dateKey(monday) === dateKey(getMonday(new Date()));
+  document.getElementById('weekSub').textContent = isCurrent ? '今週' : '';
+}
+
+// ── Navigation ──
+async function moveWeek(delta) {
+  currentWeekStart = new Date(currentWeekStart);
+  currentWeekStart.setDate(currentWeekStart.getDate() + delta * 7);
+  await loadWeekData(currentWeekStart);
+  renderWeekView();
+}
+
+async function goToday() {
+  currentWeekStart = getMonday(new Date());
+  await loadWeekData(currentWeekStart);
+  renderWeekView();
+}
+
+function renderWeekView() {
+  const days = getWeekDays(currentWeekStart);
+  renderWeekLabel(currentWeekStart);
+  renderWeekHeader(days);
+  renderHabits(days);
+  renderSummary(days);
+}
+
+// ── History ──
+async function renderHistory() {
+  const content = document.getElementById('historyContent');
+  content.innerHTML = `<div class="empty-history">読み込み中...</div>`;
+  await loadAllData();
+
+  const weekSet = {};
+  Object.keys(data).forEach(dk => {
+    const d = new Date(dk);
+    const mon = getMonday(d);
+    const wk = dateKey(mon);
+    if (!weekSet[wk]) weekSet[wk] = mon;
+  });
+
+  const weeks = Object.values(weekSet).sort((a,b) => b - a);
+  if (weeks.length === 0) {
+    content.innerHTML = `<div class="empty-history">まだ記録がありません<br><span style="font-size:11px;color:var(--text-light)">今週の習慣をチェックしてみよう ✦</span></div>`;
+    return;
+  }
+
+  const monthMap = {};
+  weeks.forEach(mon => {
+    const mk = `${mon.getFullYear()}-${mon.getMonth()}`;
+    if (!monthMap[mk]) monthMap[mk] = { mon, weeks: [] };
+    monthMap[mk].weeks.push(mon);
+  });
+
+  let html = '';
+  Object.values(monthMap).sort((a,b) => b.mon - a.mon).forEach(({ mon, weeks }) => {
+    const monthLabel = `${mon.getFullYear()}年 ${MONTHS_JP[mon.getMonth()]}`;
+    html += `<div class="month-section">
+      <div class="month-label">
+        <span>${monthLabel}</span>
+        <button class="month-copy-btn" onclick="copyMonthSummary(this, ${mon.getFullYear()}, ${mon.getMonth()})">📋 コピー</button>
+      </div>`;
+    weeks.forEach(monday => {
+      const end = new Date(monday); end.setDate(end.getDate() + 6);
+      const wLabel = `${monday.getMonth()+1}/${monday.getDate()} – ${end.getMonth()+1}/${end.getDate()}`;
+      const days = getWeekDays(monday);
+      let totalChecks = 0, totalTarget = 0;
+      const habitRows = HABITS.map(h => {
+        let cnt = 0;
+        days.forEach(d => { if (getCheck(h.id, dateKey(d))) cnt++; });
+        totalChecks += cnt; totalTarget += h.target;
+        return { h, cnt, met: cnt >= h.target };
+      });
+      const pct = totalTarget > 0 ? Math.round(totalChecks / totalTarget * 100) : 0;
+      html += `<div class="history-week-row">
+        <div class="hw-header">
+          <span class="hw-date">📅 ${wLabel}</span>
+          <span class="hw-pct">達成率 ${pct}%</span>
+        </div>
+        <div class="hw-habits">
+          ${habitRows.map(({ h, cnt, met }) =>
+            `<span class="hw-chip ${met?'met':'unmet'}">${h.icon} ${h.name} ${cnt}/${h.target}${met?' ✓':''}</span>`
+          ).join('')}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  content.innerHTML = html;
+}
+
+function buildMonthSummary(year, month) {
+  const refMon = new Date(year, month, 1);
+  const label = `${year}年${MONTHS_JP[month]}`;
+  const lines = [`【${label} 習慣トラッカー】`];
+  const totals = {}, targets = {};
+  HABITS.forEach(h => { totals[h.id] = 0; targets[h.id] = 0; });
+
+  const weekSet = {};
+  Object.keys(data).forEach(dk => {
+    const d = new Date(dk);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const mon = getMonday(d);
+      weekSet[dateKey(mon)] = mon;
+    }
+  });
+
+  Object.values(weekSet).forEach(monday => {
+    getWeekDays(monday).forEach(d => {
+      HABITS.forEach(h => { if (getCheck(h.id, dateKey(d))) totals[h.id]++; });
+    });
+    HABITS.forEach(h => { targets[h.id] += h.target; });
+  });
+
+  HABITS.forEach(h => {
+    const got = totals[h.id], tgt = targets[h.id];
+    const pct = tgt > 0 ? Math.round(got/tgt*100) : 0;
+    lines.push(`${h.icon} ${h.name}：${got}/${tgt} (${pct}%)${got >= tgt ? ' ✅' : ''}`);
+  });
+
+  const totalGot = Object.values(totals).reduce((a,b)=>a+b,0);
+  const totalTgt = Object.values(targets).reduce((a,b)=>a+b,0);
+  const overall = totalTgt > 0 ? Math.round(totalGot/totalTgt*100) : 0;
+  lines.push(`─────────────`);
+  lines.push(`月間達成率：${overall}%（${totalGot}/${totalTgt}）`);
+  lines.push(`記録週数：${Object.keys(weekSet).length}週`);
+  return lines.join('\n');
+}
+
+function copyMonthSummary(btn, year, month) {
+  const text = buildMonthSummary(year, month);
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ コピー済み';
+    btn.classList.add('copied');
+    showToast('月次サマリーをコピー！Notionに貼り付けてね ✦');
+    setTimeout(() => { btn.textContent = '📋 コピー'; btn.classList.remove('copied'); }, 3000);
+  });
+}
+
+// ── Tab ──
+async function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('weekView').classList.toggle('hidden', tab !== 'week');
+  document.getElementById('historyView').classList.toggle('active', tab === 'history');
+  document.getElementById('tabWeek').classList.toggle('active', tab === 'week');
+  document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
+  if (tab === 'history') await renderHistory();
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Confetti ──
+function spawnBurst(el) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+  const colors = ['#a8d8ea','#f2c4b8','#fce8a2','#b8dfd0','#d4c5e8'];
+  const div = document.createElement('div');
+  div.className = 'burst';
+  div.style.left = cx + 'px'; div.style.top = cy + 'px';
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('span');
+    const angle = (i/8)*Math.PI*2;
+    const dist = 22 + Math.random()*18;
+    s.style.setProperty('--tx', Math.cos(angle)*dist + 'px');
+    s.style.setProperty('--ty', Math.sin(angle)*dist + 'px');
+    s.style.background = colors[i % colors.length];
+    s.style.animationDelay = (Math.random()*0.1) + 's';
+    div.appendChild(s);
+  }
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 800);
+}
+
+// ── Init ──
+(async () => {
+  await loadWeekData(currentWeekStart);
+  renderWeekView();
+})();
+</script>
+</body>
+</html>
