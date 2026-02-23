@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Today's Habits</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=DM+Serif+Display:ital@0;1&family=Josefin+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #a8d8ea; --sky-light: #d6eef8; --sky-pale: #E4F2FC;
+    --brown: #8b6f5e; --brown-light: #c4a882;
+    --text: #4a3728; --text-muted: #9e7c6a; --text-light: #c4a882;
+    --white: #ffffff; --border: rgba(139,111,94,0.15); --shadow: rgba(139,111,94,0.10);
+    --radius: 14px; --mint: #b8dfd0; --blush: #f2c4b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    background: var(--sky-pale); min-height: 100vh;
+    padding: 16px 16px 40px; color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .widget { max-width: 480px; margin: 0 auto; }
+
+  /* ヘッダー */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .header-title { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--brown); }
+  .header-date { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 6px; }
+  .nav-btn {
+    width: 26px; height: 26px; border: 1.5px solid var(--border);
+    background: var(--white); border-radius: 8px; cursor: pointer;
+    color: var(--text-muted); font-size: 14px; transition: all 0.15s;
+  }
+  .nav-btn:hover { background: var(--sky-pale); border-color: var(--sky); color: var(--brown); }
+  .today-btn {
+    font-size: 10px; font-weight: 700; padding: 3px 10px;
+    border: 1.5px solid var(--border); background: var(--white);
+    border-radius: 99px; cursor: pointer; color: var(--text-muted);
+    font-family: 'Zen Maru Gothic', sans-serif; transition: all 0.15s;
+  }
+  .today-btn:hover { background: var(--sky-pale); border-color: var(--sky); color: var(--brown); }
+  .today-btn.is-today { border-color: var(--sky); color: var(--brown); }
+
+  /* ローディング */
+  .loading-bar { height: 3px; background: var(--sky-light); border-radius: 99px; margin-bottom: 10px; overflow: hidden; opacity: 0; transition: opacity 0.2s; }
+  .loading-bar.visible { opacity: 1; }
+  .loading-bar-fill { height: 100%; background: linear-gradient(90deg, var(--sky), var(--brown-light)); border-radius: 99px; animation: loadAnim 1.2s ease-in-out infinite; }
+  @keyframes loadAnim { 0%{width:0%;margin-left:0} 50%{width:70%;margin-left:15%} 100%{width:0%;margin-left:100%} }
+
+  /* プログレスバー */
+  .progress-card {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+    box-shadow: 0 2px 12px var(--shadow); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .progress-text { font-family: 'Josefin Sans', sans-serif; font-size: 22px; font-weight: 600; color: var(--brown); min-width: 48px; }
+  .progress-bar-wrap { flex: 1; height: 8px; background: var(--sky-light); border-radius: 99px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--sky), var(--mint)); border-radius: 99px; transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  .progress-label { font-size: 11px; color: var(--text-muted); min-width: 60px; text-align: right; }
+
+  /* 習慣リスト */
+  .habit-list { display: flex; flex-direction: column; gap: 6px; }
+  .habit-item {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 11px 14px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 1px 6px var(--shadow); cursor: pointer;
+    transition: all 0.15s; user-select: none;
+  }
+  .habit-item:hover { border-color: var(--sky); transform: translateY(-1px); box-shadow: 0 3px 10px var(--shadow); }
+  .habit-item.checked { background: rgba(184,223,208,0.15); border-color: var(--mint); }
+  .habit-item.checked:hover { border-color: var(--mint); }
+
+  /* チェックボックス */
+  .habit-check {
+    width: 24px; height: 24px; border-radius: 8px;
+    border: 1.5px solid var(--text-light); background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .habit-item.checked .habit-check { background: var(--mint); border-color: var(--mint); }
+  .habit-check-mark { font-size: 13px; opacity: 0; transition: opacity 0.15s; }
+  .habit-item.checked .habit-check-mark { opacity: 1; }
+
+  /* 習慣情報 */
+  .habit-info { flex: 1; }
+  .habit-name { font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .habit-icon { font-size: 15px; }
+  .habit-target { font-size: 10px; color: var(--text-light); margin-top: 2px; }
+  .habit-item.checked .habit-name { color: var(--text-muted); }
+
+  /* confetti */
+  .burst { position: fixed; pointer-events: none; z-index: 9999; }
+  .burst span { position: absolute; width: 7px; height: 7px; border-radius: 2px; animation: burstAnim 0.6s ease-out forwards; }
+  @keyframes burstAnim { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0} }
+
+  /* トースト */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--brown); color: white; font-size: 12px;
+    padding: 7px 18px; border-radius: 99px;
+    opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 9999;
+    font-family: 'Zen Maru Gothic', sans-serif;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="widget">
+
+  <div class="header">
+    <div>
+      <div class="header-title">✅ Today's Habits</div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+    <div class="header-right">
+      <button class="nav-btn" onclick="changeDay(-1)">‹</button>
+      <button class="today-btn" id="todayBtn" onclick="goToday()">今日</button>
+      <button class="nav-btn" onclick="changeDay(1)">›</button>
+    </div>
+  </div>
+
+  <div class="loading-bar" id="loadingBar"><div class="loading-bar-fill"></div></div>
+
+  <!-- プログレス -->
+  <div class="progress-card">
+    <div class="progress-text" id="progressText">0/6</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">今日の習慣</div>
+  </div>
+
+  <!-- 習慣リスト -->
+  <div class="habit-list" id="habitList"></div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://nbduyknklcwqbinvhoih.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iZHV5a25rbGN3cWJpbnZob2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NjMzNjUsImV4cCI6MjA4NzIzOTM2NX0.kzZYqBwfc8vpGszN2W3so2jURsZXlrve4KvUydYKIfA';
+
+const HABITS = [
+  { id: 'sleep23', icon: '🌙', name: '23:30就寝',   target: '週4日' },
+  { id: 'wake45',  icon: '☀️', name: '45分前起床',  target: '週3日' },
+  { id: 'stretch', icon: '🤸', name: '朝ストレッチ', target: '週1回' },
+  { id: 'sleep7',  icon: '💤', name: '睡眠7時間',   target: '週3日' },
+  { id: 'korean',  icon: '🇰🇷', name: '韓国語勉強',  target: '週3日' },
+];
+
+async function sbFetch(path, options = {}) {
+  const { headers: extraHeaders, ...rest } = options;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...rest,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      ...(extraHeaders || {})
+    }
+  });
+  if (res.status === 204) return null;
+  if (!res.ok) throw new Error(await res.text());
+  const t = await res.text(); return t ? JSON.parse(t) : null;
+}
+
+let currentDate = new Date(); currentDate.setHours(0,0,0,0);
+let checks = {}; // { habit_id: checked }
+
+function dateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function isToday() {
+  const t = new Date(); t.setHours(0,0,0,0);
+  return dateStr(currentDate) === dateStr(t);
+}
+function updateHeader() {
+  const dow = '日月火水木金土'[currentDate.getDay()];
+  document.getElementById('headerDate').textContent =
+    `${currentDate.getMonth()+1}月${currentDate.getDate()}日（${dow}）`;
+  document.getElementById('todayBtn').classList.toggle('is-today', isToday());
+}
+
+function changeDay(n) {
+  currentDate = new Date(currentDate); currentDate.setDate(currentDate.getDate() + n);
+  updateHeader(); loadDay();
+}
+function goToday() {
+  currentDate = new Date(); currentDate.setHours(0,0,0,0);
+  updateHeader(); loadDay();
+}
+
+function setLoading(v) { document.getElementById('loadingBar').classList.toggle('visible', v); }
+
+async function loadDay() {
+  checks = {};
+  setLoading(true);
+  try {
+    const rows = await sbFetch(`habit_logs?date=eq.${dateStr(currentDate)}&select=habit_id,checked`);
+    (rows || []).forEach(r => { checks[r.habit_id] = r.checked; });
+  } catch(e) { showToast('読み込みエラー'); }
+  finally { setLoading(false); }
+  renderList();
+}
+
+function renderList() {
+  const el = document.getElementById('habitList');
+  el.innerHTML = HABITS.map(h => {
+    const checked = !!checks[h.id];
+    return `<div class="habit-item ${checked ? 'checked' : ''}" onclick="toggle('${h.id}', this)">
+      <div class="habit-check">
+        <span class="habit-check-mark">✓</span>
+      </div>
+      <div class="habit-info">
+        <div class="habit-name"><span class="habit-icon">${h.icon}</span>${h.name}</div>
+        <div class="habit-target">${h.target}</div>
+      </div>
+    </div>`;
+  }).join('');
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = HABITS.filter(h => checks[h.id]).length;
+  const total = HABITS.length;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressText').textContent = `${done}/${total}`;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent =
+    done === total ? '全部達成 🎉' : `${pct}% 達成`;
+}
+
+async function toggle(habitId, el) {
+  const current = !!checks[habitId];
+  const next = !current;
+  checks[habitId] = next;
+  el.classList.toggle('checked', next);
+  updateProgress();
+  if (next) spawnBurst(el);
+  try {
+    // DELETEしてからINSERT
+    await sbFetch(`habit_logs?date=eq.${dateStr(currentDate)}&habit_id=eq.${habitId}`, { method: 'DELETE' });
+    await sbFetch('habit_logs', {
+      method: 'POST',
+      body: JSON.stringify({ date: dateStr(currentDate), habit_id: habitId, checked: next })
+    });
+  } catch(e) {
+    // 失敗したら元に戻す
+    checks[habitId] = current;
+    el.classList.toggle('checked', current);
+    updateProgress();
+    showToast('保存エラー: ' + e.message);
+  }
+}
+
+function spawnBurst(el) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+  const colors = ['#a8d8ea','#f2c4b8','#fce8a2','#b8dfd0','#d4c5e8'];
+  const div = document.createElement('div'); div.className = 'burst';
+  div.style.cssText = `left:${cx}px;top:${cy}px`;
+  for (let i = 0; i < 8; i++) {
+    const s = document.createElement('span');
+    const angle = (i / 8) * Math.PI * 2, dist = 20 + Math.random() * 16;
+    s.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+    s.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+    s.style.background = colors[i % colors.length];
+    div.appendChild(s);
+  }
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 700);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+updateHeader();
+loadDay();
+</script>
+</body>
+</html>
