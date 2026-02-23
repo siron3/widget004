@@ -9,7 +9,7 @@
   :root {
     --sky: #a8d8ea;
     --sky-light: #d6eef8;
-    --sky-pale: #eef7fc;
+    --sky-pale: #E4F2FC;
     --brown: #8b6f5e;
     --brown-light: #c4a882;
     --brown-pale: #f5ede6;
@@ -156,6 +156,87 @@
   .summary-bar-fill { height: 100%; background: linear-gradient(90deg, var(--sky) 0%, var(--brown-light) 100%); border-radius: 99px; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1); min-width: 4px; }
   .summary-pct { font-size: 13px; font-weight: 700; color: var(--brown); white-space: nowrap; }
 
+  /* Calendar view */
+  .calendar-view { display: none; }
+  .calendar-view.active { display: block; }
+
+  .cal-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px;
+    box-shadow: 0 2px 8px var(--shadow); margin-bottom: 10px;
+  }
+  .cal-month-label { font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--brown); }
+
+  .cal-card {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 2px 12px var(--shadow); margin-bottom: 10px;
+  }
+  .cal-grid { width: 100%; border-collapse: collapse; }
+  .cal-grid thead th {
+    padding: 8px 4px; font-size: 10px; font-weight: 700;
+    color: var(--text-muted); text-align: center;
+    border-bottom: 1.5px solid var(--border);
+    background: rgba(168,216,234,0.08);
+  }
+  .cal-grid thead th.th-sat { color: var(--sky); }
+  .cal-grid thead th.th-sun { color: var(--blush); }
+  .cal-cell {
+    vertical-align: top; padding: 4px 3px;
+    border: 1px solid var(--border); height: 64px;
+    text-align: center; position: relative;
+  }
+  .cal-cell.other-month { background: rgba(228,242,252,0.4); }
+  .cal-cell.is-today { outline: 2px solid var(--sky); outline-offset: -2px; }
+  .cal-day-num {
+    font-family: 'DM Serif Display', serif; font-size: 11px;
+    color: var(--text-muted); display: block; margin-bottom: 3px;
+  }
+  .cal-cell.other-month .cal-day-num { opacity: 0.35; }
+  .cal-cell.is-sat .cal-day-num { color: var(--sky); }
+  .cal-cell.is-sun .cal-day-num { color: var(--blush); }
+
+  /* 達成率ヒートマップ */
+  .cal-heat {
+    width: 32px; height: 32px; border-radius: 8px;
+    margin: 0 auto; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; font-family: 'Josefin Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .cal-heat.pct-0   { background: transparent; color: var(--text-light); }
+  .cal-heat.pct-25  { background: rgba(168,216,234,0.2); color: var(--sky); }
+  .cal-heat.pct-50  { background: rgba(168,216,234,0.4); color: var(--sky); }
+  .cal-heat.pct-75  { background: rgba(184,223,208,0.4); color: #5a9e89; }
+  .cal-heat.pct-100 { background: rgba(184,223,208,0.7); color: #3d8b74; }
+  .cal-heat.no-data { background: transparent; }
+
+  /* 月間サマリー */
+  .month-summary-card {
+    background: var(--white); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    box-shadow: 0 2px 12px var(--shadow); margin-bottom: 10px;
+  }
+  .month-summary-title { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; }
+  .month-habit-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 7px;
+  }
+  .month-habit-row:last-child { margin-bottom: 0; }
+  .month-habit-name { font-size: 12px; color: var(--text); min-width: 130px; }
+  .month-habit-bar-bg { flex: 1; height: 6px; background: var(--sky-light); border-radius: 99px; overflow: hidden; }
+  .month-habit-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--sky), var(--mint)); transition: width 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  .month-habit-pct { font-size: 10px; font-weight: 700; color: var(--brown); min-width: 36px; text-align: right; }
+
+  /* 凡例 */
+  .cal-legend {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-top: 1px solid var(--border);
+    font-size: 10px; color: var(--text-muted);
+  }
+  .legend-heat {
+    width: 14px; height: 14px; border-radius: 4px;
+  }
+
   /* History */
   .history-view { display: none; }
   .history-view.active { display: block; }
@@ -213,6 +294,7 @@
     </div>
     <div class="header-right">
       <button class="tab-btn active" id="tabWeek" onclick="switchTab('week')">今週</button>
+      <button class="tab-btn" id="tabCalendar" onclick="switchTab('calendar')">カレンダー</button>
       <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">履歴</button>
     </div>
   </div>
@@ -259,6 +341,11 @@
         <tbody id="habitTbody"></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- Calendar view -->
+  <div class="calendar-view" id="calendarView">
+    <div id="calendarContent"></div>
   </div>
 
   <!-- History view -->
@@ -616,13 +703,154 @@ function copyMonthSummary(btn, year, month) {
 }
 
 // ── Tab ──
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+
 async function switchTab(tab) {
   currentTab = tab;
   document.getElementById('weekView').classList.toggle('hidden', tab !== 'week');
+  document.getElementById('calendarView').classList.toggle('active', tab === 'calendar');
   document.getElementById('historyView').classList.toggle('active', tab === 'history');
   document.getElementById('tabWeek').classList.toggle('active', tab === 'week');
+  document.getElementById('tabCalendar').classList.toggle('active', tab === 'calendar');
   document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
   if (tab === 'history') await renderHistory();
+  if (tab === 'calendar') await renderCalendarTab();
+}
+
+async function renderCalendarTab() {
+  const content = document.getElementById('calendarContent');
+  content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted)">読み込み中...</div>`;
+
+  // その月の全データを取得
+  const from = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+  const lastDay = new Date(calYear, calMonth+1, 0).getDate();
+  const to = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+  try {
+    const rows = await sbFetch(`habit_logs?date=gte.${from}&date=lte.${to}&select=date,habit_id,checked`);
+    (rows || []).forEach(r => {
+      if (!data[r.date]) data[r.date] = {};
+      data[r.date][r.habit_id] = r.checked;
+    });
+  } catch(e) { console.error(e); }
+
+  const HABIT_COUNT = HABITS.length;
+  const today = new Date();
+
+  // 日ごとの達成率を計算
+  function getDayPct(dk) {
+    const dayData = data[dk];
+    if (!dayData) return null;
+    const checked = HABITS.filter(h => dayData[h.id]).length;
+    return Math.round(checked / HABIT_COUNT * 100);
+  }
+  function heatClass(pct) {
+    if (pct === null) return 'no-data';
+    if (pct === 0) return 'pct-0';
+    if (pct <= 25) return 'pct-25';
+    if (pct <= 50) return 'pct-50';
+    if (pct <= 75) return 'pct-75';
+    return 'pct-100';
+  }
+
+  // カレンダー描画
+  const firstDow = new Date(calYear, calMonth, 1).getDay();
+  const firstCol = firstDow === 0 ? 6 : firstDow - 1;
+  const prevLastDate = new Date(calYear, calMonth, 0).getDate();
+  let calHtml = '', date = 1, nextDate = 1;
+  for (let row = 0; row < 6; row++) {
+    if (date > lastDay) break;
+    calHtml += '<tr>';
+    for (let col = 0; col < 7; col++) {
+      let cellDate, isOther = false;
+      const absCol = row * 7 + col;
+      if (absCol < firstCol) { cellDate = prevLastDate - firstCol + absCol + 1; isOther = true; }
+      else if (date > lastDay) { cellDate = nextDate++; isOther = true; }
+      else { cellDate = date++; }
+      const dk = isOther ? null : `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(cellDate).padStart(2,'0')}`;
+      const isToday = !isOther && today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===cellDate;
+      const isFut = dk && new Date(dk) > today;
+      const pct = dk && !isFut ? getDayPct(dk) : null;
+      const cls = heatClass(pct);
+      let cls2 = 'cal-cell';
+      if (isOther) cls2 += ' other-month';
+      if (isToday) cls2 += ' is-today';
+      if (col === 5) cls2 += ' is-sat';
+      if (col === 6) cls2 += ' is-sun';
+      calHtml += `<td class="${cls2}">
+        <span class="cal-day-num">${cellDate}</span>
+        ${!isOther && !isFut ? `<div class="cal-heat ${cls}">${pct !== null ? pct+'%' : ''}</div>` : ''}
+      </td>`;
+    }
+    calHtml += '</tr>';
+  }
+
+  // 月間習慣別サマリー
+  const monthTotals = {}, monthMaxDays = {};
+  HABITS.forEach(h => { monthTotals[h.id] = 0; monthMaxDays[h.id] = 0; });
+  for (let d = 1; d <= lastDay; d++) {
+    const dk = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dt = new Date(dk);
+    if (dt > today) break;
+    HABITS.forEach(h => {
+      monthMaxDays[h.id]++;
+      if (data[dk]?.[h.id]) monthTotals[h.id]++;
+    });
+  }
+
+  const monthSummaryHtml = HABITS.map(h => {
+    const got = monthTotals[h.id], max = monthMaxDays[h.id];
+    const pct = max > 0 ? Math.round(got / max * 100) : 0;
+    return `<div class="month-habit-row">
+      <div class="month-habit-name">${h.icon} ${h.name}</div>
+      <div class="month-habit-bar-bg"><div class="month-habit-bar-fill" style="width:${pct}%"></div></div>
+      <div class="month-habit-pct">${got}/${max}日</div>
+    </div>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="cal-nav">
+      <div class="cal-month-label">${calYear}年 ${MONTHS_JP[calMonth]}</div>
+      <div class="nav-group">
+        <button class="nav-btn" onclick="moveCalMonth(-1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button class="today-chip" onclick="goCalThisMonth()">今月</button>
+        <button class="nav-btn" onclick="moveCalMonth(1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="cal-card">
+      <table class="cal-grid">
+        <thead><tr>
+          <th>月</th><th>火</th><th>水</th><th>木</th><th>金</th>
+          <th class="th-sat">土</th><th class="th-sun">日</th>
+        </tr></thead>
+        <tbody>${calHtml}</tbody>
+      </table>
+      <div class="cal-legend">
+        <span>達成率</span>
+        <div class="legend-heat" style="background:rgba(168,216,234,0.2)"></div><span>〜25%</span>
+        <div class="legend-heat" style="background:rgba(168,216,234,0.4)"></div><span>〜50%</span>
+        <div class="legend-heat" style="background:rgba(184,223,208,0.4)"></div><span>〜75%</span>
+        <div class="legend-heat" style="background:rgba(184,223,208,0.7)"></div><span>100%</span>
+      </div>
+    </div>
+    <div class="month-summary-card">
+      <div class="month-summary-title">✦ 月間習慣別達成日数</div>
+      ${monthSummaryHtml}
+    </div>`;
+}
+
+async function moveCalMonth(n) {
+  calMonth += n;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  await renderCalendarTab();
+}
+async function goCalThisMonth() {
+  calYear = new Date().getFullYear(); calMonth = new Date().getMonth();
+  await renderCalendarTab();
 }
 
 // ── Toast ──
