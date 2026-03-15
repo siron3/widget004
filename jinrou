@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐺 人狼メモ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #0d0d12;
+    --surface: #14141e;
+    --card: #1a1a28;
+    --border: #2a2a40;
+    --accent: #c84b6e;
+    --accent2: #5b7cfa;
+    --accent3: #e8b84b;
+    --wolf: #c84b6e;
+    --village: #5b7cfa;
+    --dead: #444460;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+    --green: #4bcf8e;
+    --purple: #9b6ef5;
+    --orange: #f5834a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .setup-area {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .setup-area input[type=number] {
+    width: 52px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    padding: 4px 8px;
+    text-align: center;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.8; }
+  .btn.secondary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn.blue { background: var(--accent2); }
+
+  /* ===== DAY TABS ===== */
+  .day-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .day-tab {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .day-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .day-tab:hover:not(.active) {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .day-tab.add-tab {
+    background: transparent;
+    color: var(--muted);
+  }
+  .day-tab.add-tab:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ===== MAIN LAYOUT ===== */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ===== SECTION ===== */
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  /* ===== PLAYER GRID ===== */
+  .player-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .player-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    position: relative;
+    transition: border-color 0.15s;
+    cursor: pointer;
+  }
+
+  .player-card.dead {
+    opacity: 0.45;
+    background: #111118;
+    border-style: dashed;
+  }
+
+  .player-card.werewolf { border-color: var(--wolf); }
+  .player-card.village { border-color: var(--village); }
+  .player-card.seer { border-color: var(--green); }
+  .player-card.medium { border-color: var(--purple); }
+  .player-card.knight { border-color: var(--accent3); }
+
+  .player-number {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .player-name-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    width: 100%;
+    padding: 2px 0;
+    margin-bottom: 8px;
+    outline: none;
+  }
+
+  .player-name-input::placeholder { color: var(--muted); font-weight: 400; }
+  .player-name-input:focus { border-bottom-color: var(--accent); }
+
+  .player-role-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  .role-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.1s;
+    opacity: 0.4;
+  }
+
+  .role-badge.active { opacity: 1; }
+  .role-badge.seer { background: rgba(75,207,142,0.15); border-color: var(--green); color: var(--green); }
+  .role-badge.medium { background: rgba(155,110,245,0.15); border-color: var(--purple); color: var(--purple); }
+  .role-badge.knight { background: rgba(232,184,75,0.15); border-color: var(--accent3); color: var(--accent3); }
+  .role-badge.crazy { background: rgba(245,131,74,0.15); border-color: var(--orange); color: var(--orange); }
+  .role-badge.wolf { background: rgba(200,75,110,0.15); border-color: var(--wolf); color: var(--wolf); }
+  .role-badge.village { background: rgba(91,124,250,0.15); border-color: var(--accent2); color: var(--accent2); }
+
+  .player-status-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .status-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 700;
+  }
+
+  .status-tag.executed { background: rgba(200,75,110,0.2); color: var(--wolf); }
+  .status-tag.bitten { background: rgba(200,75,110,0.35); color: #ff6090; }
+  .status-tag.guarded { background: rgba(232,184,75,0.2); color: var(--accent3); }
+  .status-tag.white { background: rgba(91,124,250,0.2); color: var(--accent2); }
+  .status-tag.black { background: rgba(200,75,110,0.2); color: var(--wolf); }
+
+  /* ===== RESULTS PANEL ===== */
+  .result-entry {
+    display: grid;
+    grid-template-columns: 90px 1fr 60px auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .result-entry select,
+  .result-entry input[type=text] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 12px;
+    padding: 5px 8px;
+    outline: none;
+    width: 100%;
+  }
+
+  .result-entry select:focus,
+  .result-entry input:focus { border-color: var(--accent2); }
+
+  .result-tag {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .result-tag.white { background: rgba(91,124,250,0.2); color: var(--accent2); border: 1px solid var(--accent2); }
+  .result-tag.black { background: rgba(200,75,110,0.2); color: var(--wolf); border: 1px solid var(--wolf); }
+  .result-tag.alive { background: rgba(75,207,142,0.2); color: var(--green); border: 1px solid var(--green); }
+  .result-tag.dead { background: rgba(100,100,140,0.2); color: var(--dead); border: 1px solid var(--dead); }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    line-height: 1;
+    border-radius: 4px;
+  }
+  .del-btn:hover { color: var(--wolf); }
+
+  /* ===== EXECUTION / BITE ===== */
+  .event-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .event-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    min-width: 44px;
+  }
+
+  .event-row select {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13px;
+    padding: 6px 10px;
+    outline: none;
+  }
+
+  .event-row select.execute { border-color: rgba(200,75,110,0.5); }
+  .event-row select.bite { border-color: rgba(200,75,110,0.8); }
+  .event-row select.guard { border-color: rgba(232,184,75,0.5); }
+
+  /* ===== MEMO ===== */
+  .memo-area {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 13px;
+    padding: 10px;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    line-height: 1.7;
+  }
+
+  .memo-area:focus { border-color: var(--accent2); }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ===== SUMMARY SIDEBAR ===== */
+  .co-summary-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .co-role-label {
+    min-width: 50px;
+    font-weight: 700;
+    padding-top: 2px;
+  }
+
+  .co-players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .co-chip {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .co-chip.seer { background: rgba(75,207,142,0.2); color: var(--green); }
+  .co-chip.medium { background: rgba(155,110,245,0.2); color: var(--purple); }
+  .co-chip.knight { background: rgba(232,184,75,0.2); color: var(--accent3); }
+  .co-chip.crazy { background: rgba(245,131,74,0.2); color: var(--orange); }
+  .co-chip.wolf { background: rgba(200,75,110,0.2); color: var(--wolf); }
+
+  .timeline-entry {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .timeline-day {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    min-width: 32px;
+  }
+
+  .timeline-event {
+    color: var(--text);
+  }
+
+  .tag-execute { color: var(--wolf); font-weight: 700; }
+  .tag-bite { color: #ff6090; font-weight: 700; }
+  .tag-guard { color: var(--accent3); font-weight: 700; }
+
+  /* ===== NOOSE CALC ===== */
+  .noose-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .noose-counts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .noose-count-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+
+  .noose-count-box .count-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .noose-count-box .count-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .noose-count-box.village .count-num { color: var(--accent2); }
+  .noose-count-box.wolf .count-num { color: var(--wolf); }
+
+  .noose-result {
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.6;
+    border: 1px solid transparent;
+  }
+
+  .noose-result.safe {
+    background: rgba(75,207,142,0.1);
+    border-color: rgba(75,207,142,0.3);
+    color: var(--green);
+  }
+
+  .noose-result.danger {
+    background: rgba(200,75,110,0.1);
+    border-color: rgba(200,75,110,0.4);
+    color: var(--wolf);
+  }
+
+  .noose-result.critical {
+    background: rgba(200,75,110,0.2);
+    border-color: var(--wolf);
+    color: #ff6090;
+    animation: pulse-border 1.5s ease-in-out infinite;
+  }
+
+  .noose-result.wolf-win {
+    background: rgba(200,75,110,0.25);
+    border-color: var(--wolf);
+    color: var(--wolf);
+  }
+
+  .noose-result.village-win {
+    background: rgba(75,207,142,0.15);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--wolf); }
+    50% { border-color: #ff6090; box-shadow: 0 0 8px rgba(200,75,110,0.4); }
+  }
+
+  .noose-detail {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .wolf-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .wolf-input-row input[type=number] {
+    width: 52px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    padding: 4px 8px;
+    text-align: center;
+    outline: none;
+  }
+
+  .wolf-input-row input:focus { border-color: var(--wolf); }
+
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:24px">🐺</span>
+  <h1>人狼メモ</h1>
+  <div class="setup-area">
+    <span>プレイヤー数</span>
+    <input type="number" id="playerCount" value="12" min="4" max="20">
+    <button class="btn" onclick="initGame()">ゲーム開始</button>
+    <button class="btn secondary" onclick="resetAll()">リセット</button>
+  </div>
+</header>
+
+<!-- Day Tabs -->
+<div class="day-tabs" id="dayTabs"></div>
+
+<!-- Main -->
+<div class="main-grid">
+  <!-- Left: Players + Events -->
+  <div>
+    <div class="section">
+      <div class="section-title">プレイヤー / CO状況</div>
+      <div class="player-grid" id="playerGrid"></div>
+    </div>
+
+    <div class="section" id="dayEventsSection">
+      <div class="section-title" id="dayEventsTitle">Day 1 — イベント</div>
+
+      <!-- 占い結果 -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px;letter-spacing:0.08em">🔮 占い結果</div>
+        <div id="seerResults"></div>
+        <button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="addSeerResult()">＋ 追加</button>
+      </div>
+
+      <!-- 霊能結果 -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px;letter-spacing:0.08em">👻 霊能結果</div>
+        <div id="mediumResults"></div>
+        <button class="btn secondary" style="font-size:11px;padding:4px 10px" onclick="addMediumResult()">＋ 追加</button>
+      </div>
+
+      <!-- 騎士護衛 -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--accent3);margin-bottom:8px;letter-spacing:0.08em">🛡 騎士護衛先</div>
+        <div class="event-row">
+          <span class="event-label">護衛先</span>
+          <select class="guard" id="guardTarget">
+            <option value="">— 選択 —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 吊り -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px;letter-spacing:0.08em">⚖️ 吊り先</div>
+        <div class="event-row">
+          <span class="event-label">対象</span>
+          <select class="execute" id="executeTarget" onchange="updateExecute()">
+            <option value="">— 選択 —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 噛み -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:#ff6090;margin-bottom:8px;letter-spacing:0.08em">🩸 噛み先</div>
+        <div class="event-row">
+          <span class="event-label">対象</span>
+          <select class="bite" id="biteTarget" onchange="updateBite()">
+            <option value="">— 選択 —</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- メモ -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:0.08em">📝 メモ</div>
+        <textarea class="memo-area" id="dayMemo" placeholder="気づいたことをメモ…" oninput="saveMemo()"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Summary Sidebar -->
+  <div>
+    <div class="section">
+      <div class="section-title">🪢 吊り縄計算</div>
+      <div class="noose-panel">
+        <div class="wolf-input-row">
+          <span>人狼の総数（推定）</span>
+          <input type="number" id="wolfTotalInput" value="2" min="1" max="10" oninput="renderNooseCalc()">
+          <span>人</span>
+        </div>
+        <div class="noose-counts">
+          <div class="noose-count-box village">
+            <div class="count-label">村人陣営 生存</div>
+            <div class="count-num" id="aliveVillageCount">—</div>
+          </div>
+          <div class="noose-count-box wolf">
+            <div class="count-label">人狼陣営 生存</div>
+            <div class="count-num" id="aliveWolfCount">—</div>
+          </div>
+        </div>
+        <div class="noose-result" id="nooseResult">—</div>
+        <div class="noose-detail" id="nooseDetail"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">CO サマリー</div>
+      <div id="coSummary">
+        <span style="font-size:12px;color:var(--muted)">役職COがあると表示されます</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">ゲーム進行ログ</div>
+      <div id="gameLog">
+        <span style="font-size:12px;color:var(--muted)">吊り・噛みが記録されます</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">生存者</div>
+      <div id="aliveList" style="font-size:13px;line-height:2;color:var(--text)"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+let state = {
+  playerCount: 12,
+  players: [],   // {id, name, role, dead, deathDay, deathType}
+  days: [],      // {day, execute, bite, guard, seerResults:[], mediumResults:[], memo}
+  currentDay: 0
+};
+
+const ROLES = [
+  { key: 'seer',   label: '占', cls: 'seer' },
+  { key: 'medium', label: '霊', cls: 'medium' },
+  { key: 'knight', label: '騎', cls: 'knight' },
+  { key: 'crazy',  label: '狂', cls: 'crazy' },
+  { key: 'wolf',   label: '狼', cls: 'wolf' },
+  { key: 'village',label: '村', cls: 'village' },
+];
+
+// ========== INIT ==========
+function initGame() {
+  const n = parseInt(document.getElementById('playerCount').value) || 12;
+  state.playerCount = n;
+  state.players = Array.from({length: n}, (_, i) => ({
+    id: i+1, name: '', role: null, dead: false, deathDay: null, deathType: null
+  }));
+  state.days = [createDay(1)];
+  state.currentDay = 0;
+  renderAll();
+}
+
+function createDay(num) {
+  return { day: num, execute: '', bite: '', guard: '', seerResults: [], mediumResults: [], memo: '' };
+}
+
+function resetAll() {
+  if (!confirm('リセットしますか？')) return;
+  state = { playerCount: 12, players: [], days: [], currentDay: 0 };
+  renderAll();
+}
+
+// ========== RENDER ==========
+function renderAll() {
+  renderDayTabs();
+  renderPlayers();
+  renderDayEvents();
+  renderSidebar();
+}
+
+function renderDayTabs() {
+  const tabs = document.getElementById('dayTabs');
+  tabs.innerHTML = '';
+  state.days.forEach((d, i) => {
+    const t = document.createElement('div');
+    t.className = 'day-tab' + (i === state.currentDay ? ' active' : '');
+    t.textContent = `Day ${d.day}`;
+    t.onclick = () => { state.currentDay = i; renderAll(); };
+    tabs.appendChild(t);
+  });
+  const add = document.createElement('div');
+  add.className = 'day-tab add-tab';
+  add.textContent = '＋ 次の日';
+  add.onclick = addDay;
+  tabs.appendChild(add);
+}
+
+function addDay() {
+  const next = state.days.length + 1;
+  state.days.push(createDay(next));
+  state.currentDay = state.days.length - 1;
+  renderAll();
+}
+
+function renderPlayers() {
+  const grid = document.getElementById('playerGrid');
+  grid.innerHTML = '';
+  state.players.forEach(p => {
+    const card = document.createElement('div');
+    const roleClass = p.role ? p.role : '';
+    card.className = 'player-card' + (p.dead ? ' dead' : '') + (p.role ? ' ' + p.role : '');
+    card.innerHTML = `
+      <div class="player-number">#${p.id}</div>
+      <input class="player-name-input" placeholder="名前" value="${p.name}"
+        oninput="updatePlayerName(${p.id-1}, this.value)">
+      <div class="player-role-row">
+        ${ROLES.map(r => `
+          <span class="role-badge ${r.cls} ${p.role === r.key ? 'active' : ''}"
+            onclick="toggleRole(${p.id-1}, '${r.key}')">${r.label}</span>
+        `).join('')}
+      </div>
+      <div class="player-status-row">
+        ${p.dead ? `<span class="status-tag ${p.deathType}">${p.deathType === 'executed' ? '⚖️ 吊り' : '🩸 噛み'} D${p.deathDay}</span>` : ''}
+        ${renderPlayerResults(p.id)}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderPlayerResults(pid) {
+  // Collect all seer/medium results referencing this player
+  let tags = '';
+  state.days.forEach(d => {
+    d.seerResults.forEach(r => {
+      if (r.target == pid && r.result) {
+        tags += `<span class="status-tag ${r.result}" title="D${d.day}占い">${r.result === 'white' ? '白' : '黒'}</span>`;
+      }
+    });
+    d.mediumResults.forEach(r => {
+      if (r.target == pid && r.result) {
+        tags += `<span class="status-tag ${r.result}" title="D${d.day}霊能">${r.result === 'white' ? '霊白' : '霊黒'}</span>`;
+      }
+    });
+    if (d.guard && parseInt(d.guard) === pid) {
+      tags += `<span class="status-tag guarded" title="D${d.day}護衛">🛡</span>`;
+    }
+  });
+  return tags;
+}
+
+function renderDayEvents() {
+  if (state.days.length === 0) return;
+  const day = state.days[state.currentDay];
+  document.getElementById('dayEventsTitle').textContent = `Day ${day.day} — イベント`;
+
+  const aliveOptions = getAliveOptions();
+  const allOptions = getAllOptions();
+
+  // Guard
+  setSelectOptions('guardTarget', aliveOptions, day.guard);
+  document.getElementById('guardTarget').onchange = function() {
+    day.guard = this.value; renderPlayers(); renderSidebar();
+  };
+
+  // Execute
+  setSelectOptions('executeTarget', aliveOptions, day.execute);
+  // Bite
+  setSelectOptions('biteTarget', aliveOptions, day.bite);
+
+  // Seer results
+  renderResultEntries('seerResults', day.seerResults, allOptions);
+  // Medium results
+  renderResultEntries('mediumResults', day.mediumResults, allOptions);
+
+  // Memo
+  document.getElementById('dayMemo').value = day.memo || '';
+}
+
+function renderResultEntries(containerId, results, options) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  results.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'result-entry';
+    row.style.marginBottom = '8px';
+
+    // Who did the action (占い師/霊能者 name input)
+    const byInput = document.createElement('input');
+    byInput.type = 'text';
+    byInput.placeholder = 'COした人';
+    byInput.value = r.by || '';
+    byInput.oninput = (e) => { r.by = e.target.value; };
+
+    // Target select
+    const targetSel = document.createElement('select');
+    targetSel.innerHTML = '<option value="">— 対象 —</option>' + 
+      options.map(o => `<option value="${o.id}" ${r.target == o.id ? 'selected' : ''}>${o.label}</option>`).join('');
+    targetSel.onchange = (e) => { r.target = e.target.value; renderPlayers(); };
+
+    // Result toggle
+    const resultBtn = document.createElement('span');
+    resultBtn.className = 'result-tag ' + (r.result || 'white');
+    resultBtn.textContent = r.result === 'black' ? '黒' : '白';
+    resultBtn.onclick = () => {
+      r.result = r.result === 'black' ? 'white' : 'black';
+      resultBtn.className = 'result-tag ' + r.result;
+      resultBtn.textContent = r.result === 'black' ? '黒' : '白';
+      renderPlayers();
+    };
+
+    // Delete
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del-btn';
+    delBtn.textContent = '✕';
+    delBtn.onclick = () => {
+      results.splice(i, 1);
+      renderResultEntries(containerId, results, options);
+      renderPlayers();
+    };
+
+    row.appendChild(byInput);
+    row.appendChild(targetSel);
+    row.appendChild(resultBtn);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+
+function renderSidebar() {
+  renderNooseCalc();
+  renderCoSummary();
+  renderGameLog();
+  renderAliveList();
+}
+
+function renderNooseCalc() {
+  if (state.players.length === 0) return;
+
+  const wolfTotal = parseInt(document.getElementById('wolfTotalInput')?.value) || 2;
+
+  // 生存プレイヤー
+  const alivePlayers = state.players.filter(p => !p.dead);
+  const aliveCount = alivePlayers.length;
+
+  // 死亡した確定人狼の数（役職が wolf でdead）
+  const deadWolves = state.players.filter(p => p.dead && p.role === 'wolf').length;
+  // 生存中の人狼推定数
+  const aliveWolves = Math.max(0, wolfTotal - deadWolves);
+  // 村人陣営生存数（人狼以外）
+  const aliveVillage = aliveCount - aliveWolves;
+
+  document.getElementById('aliveVillageCount').textContent = aliveVillage;
+  document.getElementById('aliveWolfCount').textContent = aliveWolves;
+
+  const resultEl = document.getElementById('nooseResult');
+  const detailEl = document.getElementById('nooseDetail');
+
+  // 勝利判定
+  if (aliveWolves === 0) {
+    resultEl.className = 'noose-result village-win';
+    resultEl.textContent = '🎉 村人陣営の勝利！';
+    detailEl.textContent = '人狼が全滅しました';
+    return;
+  }
+
+  if (aliveWolves >= aliveVillage) {
+    resultEl.className = 'noose-result wolf-win';
+    resultEl.textContent = '💀 人狼陣営の勝利';
+    detailEl.textContent = `人狼${aliveWolves}人 ≥ 村人陣営${aliveVillage}人`;
+    return;
+  }
+
+  // あと何回吊れるか計算
+  // 人狼が勝利する条件: wolves >= village_alive - hanged
+  // つまり village_alive - hanged <= wolves → hanged >= village_alive - wolves
+  // 村人が安全に外せる吊り回数 = (aliveVillage - aliveWolves) - 1
+  const safeHangs = aliveVillage - aliveWolves - 1;
+
+  if (safeHangs <= 0) {
+    resultEl.className = 'noose-result critical';
+    resultEl.textContent = '⚠️ 次の吊りで人狼を当てないと負け！';
+    detailEl.textContent = `村人${aliveVillage}人 / 人狼${aliveWolves}人\nあと外せる吊りは 0 回`;
+  } else if (safeHangs === 1) {
+    resultEl.className = 'noose-result danger';
+    resultEl.textContent = `あと ${safeHangs} 回 外せる`;
+    detailEl.textContent = `村人${aliveVillage}人 / 人狼${aliveWolves}人\n次の次には必ず人狼を当てる必要あり`;
+  } else {
+    resultEl.className = 'noose-result safe';
+    resultEl.textContent = `あと ${safeHangs} 回 外せる`;
+    detailEl.textContent = `村人${aliveVillage}人 / 人狼${aliveWolves}人\n生存${aliveCount}人中 推定人狼${aliveWolves}人`;
+  }
+}
+
+function renderCoSummary() {
+  const container = document.getElementById('coSummary');
+  const roleGroups = {};
+  state.players.forEach(p => {
+    if (p.role) {
+      if (!roleGroups[p.role]) roleGroups[p.role] = [];
+      roleGroups[p.role].push(p);
+    }
+  });
+  if (Object.keys(roleGroups).length === 0) {
+    container.innerHTML = '<span style="font-size:12px;color:var(--muted)">役職COがあると表示されます</span>';
+    return;
+  }
+  const roleLabels = { seer: '占い師', medium: '霊能者', knight: '騎士', crazy: '狂人', wolf: '人狼', village: '村人' };
+  container.innerHTML = Object.entries(roleGroups).map(([role, players]) => `
+    <div class="co-summary-row">
+      <span class="co-role-label" style="color:${roleColor(role)}">${roleLabels[role] || role}</span>
+      <div class="co-players">
+        ${players.map(p => `<span class="co-chip ${role}">${p.name || '#'+p.id}${p.dead ? ' 💀' : ''}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function roleColor(role) {
+  const map = { seer: 'var(--green)', medium: 'var(--purple)', knight: 'var(--accent3)', crazy: 'var(--orange)', wolf: 'var(--wolf)', village: 'var(--accent2)' };
+  return map[role] || 'var(--muted)';
+}
+
+function renderGameLog() {
+  const container = document.getElementById('gameLog');
+  const entries = [];
+  state.days.forEach(d => {
+    if (d.execute) {
+      const p = state.players.find(p => p.id == d.execute);
+      entries.push({ day: d.day, html: `<span class="tag-execute">⚖️ 吊り:</span> ${p ? (p.name || '#'+p.id) : '?'}` });
+    }
+    if (d.bite) {
+      const p = state.players.find(p => p.id == d.bite);
+      entries.push({ day: d.day, html: `<span class="tag-bite">🩸 噛み:</span> ${p ? (p.name || '#'+p.id) : '?'}` });
+    }
+    if (d.guard) {
+      const p = state.players.find(p => p.id == d.guard);
+      entries.push({ day: d.day, html: `<span class="tag-guard">🛡 護衛:</span> ${p ? (p.name || '#'+p.id) : '?'}` });
+    }
+  });
+  if (entries.length === 0) {
+    container.innerHTML = '<span style="font-size:12px;color:var(--muted)">吊り・噛みが記録されます</span>';
+    return;
+  }
+  container.innerHTML = entries.map(e => `
+    <div class="timeline-entry">
+      <span class="timeline-day">D${e.day}</span>
+      <span class="timeline-event">${e.html}</span>
+    </div>
+  `).join('');
+}
+
+function renderAliveList() {
+  const container = document.getElementById('aliveList');
+  const alive = state.players.filter(p => !p.dead);
+  container.textContent = alive.length === 0 ? '—' :
+    alive.map(p => (p.name || `#${p.id}`)).join('　');
+  container.innerHTML = alive.length === 0 ? '<span style="color:var(--muted)">—</span>' :
+    alive.map(p => `<span style="margin-right:8px">${p.name || '#'+p.id}</span>`).join('');
+}
+
+// ========== HELPERS ==========
+function getAliveOptions() {
+  return state.players
+    .filter(p => !p.dead)
+    .map(p => ({ id: p.id, label: (p.name || `#${p.id}`) }));
+}
+
+function getAllOptions() {
+  return state.players.map(p => ({ id: p.id, label: (p.name || `#${p.id}`) + (p.dead ? ' 💀' : '') }));
+}
+
+function setSelectOptions(id, options, selected) {
+  const sel = document.getElementById(id);
+  const prev = selected;
+  sel.innerHTML = '<option value="">— 選択 —</option>' +
+    options.map(o => `<option value="${o.id}" ${o.id == prev ? 'selected' : ''}>${o.label}</option>`).join('');
+}
+
+function updatePlayerName(idx, val) {
+  state.players[idx].name = val;
+  renderSidebar();
+  // Update all selects lazily
+  const allOptions = getAllOptions();
+  const aliveOptions = getAliveOptions();
+  setSelectOptions('guardTarget', aliveOptions, state.days[state.currentDay].guard);
+  setSelectOptions('executeTarget', aliveOptions, state.days[state.currentDay].execute);
+  setSelectOptions('biteTarget', aliveOptions, state.days[state.currentDay].bite);
+}
+
+function toggleRole(idx, role) {
+  state.players[idx].role = state.players[idx].role === role ? null : role;
+  renderPlayers();
+  renderCoSummary();
+}
+
+function updateExecute() {
+  const day = state.days[state.currentDay];
+  const prev = day.execute;
+  day.execute = document.getElementById('executeTarget').value;
+  // Unmark old
+  if (prev) {
+    const old = state.players.find(p => p.id == prev);
+    if (old) { old.dead = false; old.deathDay = null; old.deathType = null; }
+  }
+  // Mark new
+  if (day.execute) {
+    const p = state.players.find(p => p.id == day.execute);
+    if (p) { p.dead = true; p.deathDay = day.day; p.deathType = 'executed'; }
+  }
+  renderPlayers();
+  renderSidebar();
+}
+
+function updateBite() {
+  const day = state.days[state.currentDay];
+  const prev = day.bite;
+  day.bite = document.getElementById('biteTarget').value;
+  if (prev) {
+    const old = state.players.find(p => p.id == prev);
+    if (old && old.deathType === 'bitten') { old.dead = false; old.deathDay = null; old.deathType = null; }
+  }
+  if (day.bite) {
+    const p = state.players.find(p => p.id == day.bite);
+    if (p) { p.dead = true; p.deathDay = day.day; p.deathType = 'bitten'; }
+  }
+  renderPlayers();
+  renderSidebar();
+}
+
+function addSeerResult() {
+  state.days[state.currentDay].seerResults.push({ by: '', target: '', result: 'white' });
+  renderDayEvents();
+}
+
+function addMediumResult() {
+  state.days[state.currentDay].mediumResults.push({ by: '', target: '', result: 'white' });
+  renderDayEvents();
+}
+
+function saveMemo() {
+  state.days[state.currentDay].memo = document.getElementById('dayMemo').value;
+}
+
+// ========== START ==========
+initGame();
+</script>
+</body>
+</html>
