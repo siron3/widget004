@@ -549,6 +549,88 @@
 
   .wolf-input-row input:focus { border-color: var(--wolf); }
 
+  /* ===== DIVINE LOG ===== */
+  .divine-day-block {
+    margin-bottom: 12px;
+  }
+
+  .divine-day-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .divine-entry {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+
+  .divine-type-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .divine-type-badge.seer {
+    background: rgba(75,207,142,0.15);
+    color: var(--green);
+    border: 1px solid rgba(75,207,142,0.4);
+  }
+
+  .divine-type-badge.medium {
+    background: rgba(155,110,245,0.15);
+    color: var(--purple);
+    border: 1px solid rgba(155,110,245,0.4);
+  }
+
+  .divine-by {
+    color: var(--muted);
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+
+  .divine-arrow {
+    color: var(--border);
+    font-size: 10px;
+  }
+
+  .divine-target {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .divine-result-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .divine-result-badge.white {
+    background: rgba(91,124,250,0.2);
+    color: var(--accent2);
+    border: 1px solid rgba(91,124,250,0.4);
+  }
+
+  .divine-result-badge.black {
+    background: rgba(200,75,110,0.2);
+    color: var(--wolf);
+    border: 1px solid rgba(200,75,110,0.4);
+  }
+
 </style>
 </head>
 <body>
@@ -656,6 +738,13 @@
         </div>
         <div class="noose-result" id="nooseResult">—</div>
         <div class="noose-detail" id="nooseDetail"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔮 占い・霊能ログ</div>
+      <div id="divineLog">
+        <span style="font-size:12px;color:var(--muted)">占い・霊能結果が記録されます</span>
       </div>
     </div>
 
@@ -840,13 +929,13 @@ function renderResultEntries(containerId, results, options) {
     byInput.type = 'text';
     byInput.placeholder = 'COした人';
     byInput.value = r.by || '';
-    byInput.oninput = (e) => { r.by = e.target.value; };
+    byInput.oninput = (e) => { r.by = e.target.value; renderDivineLog(); };
 
     // Target select
     const targetSel = document.createElement('select');
     targetSel.innerHTML = '<option value="">— 対象 —</option>' + 
       options.map(o => `<option value="${o.id}" ${r.target == o.id ? 'selected' : ''}>${o.label}</option>`).join('');
-    targetSel.onchange = (e) => { r.target = e.target.value; renderPlayers(); };
+    targetSel.onchange = (e) => { r.target = e.target.value; renderPlayers(); renderDivineLog(); };
 
     // Result toggle
     const resultBtn = document.createElement('span');
@@ -856,7 +945,7 @@ function renderResultEntries(containerId, results, options) {
       r.result = r.result === 'black' ? 'white' : 'black';
       resultBtn.className = 'result-tag ' + r.result;
       resultBtn.textContent = r.result === 'black' ? '黒' : '白';
-      renderPlayers();
+      renderPlayers(); renderDivineLog();
     };
 
     // Delete
@@ -866,7 +955,7 @@ function renderResultEntries(containerId, results, options) {
     delBtn.onclick = () => {
       results.splice(i, 1);
       renderResultEntries(containerId, results, options);
-      renderPlayers();
+      renderPlayers(); renderDivineLog();
     };
 
     row.appendChild(byInput);
@@ -879,9 +968,64 @@ function renderResultEntries(containerId, results, options) {
 
 function renderSidebar() {
   renderNooseCalc();
+  renderDivineLog();
   renderCoSummary();
   renderGameLog();
   renderAliveList();
+}
+
+function renderDivineLog() {
+  const container = document.getElementById('divineLog');
+  if (!container) return;
+
+  // 全Dayの占い・霊能結果を日付順で収集
+  const blocks = [];
+  state.days.forEach(d => {
+    const entries = [];
+
+    d.seerResults.forEach(r => {
+      if (!r.target) return;
+      const target = state.players.find(p => p.id == r.target);
+      entries.push({
+        type: 'seer',
+        by: r.by || '',
+        targetName: target ? (target.name || `#${target.id}`) : `#${r.target}`,
+        result: r.result || 'white'
+      });
+    });
+
+    d.mediumResults.forEach(r => {
+      if (!r.target) return;
+      const target = state.players.find(p => p.id == r.target);
+      entries.push({
+        type: 'medium',
+        by: r.by || '',
+        targetName: target ? (target.name || `#${target.id}`) : `#${r.target}`,
+        result: r.result || 'white'
+      });
+    });
+
+    if (entries.length > 0) blocks.push({ day: d.day, entries });
+  });
+
+  if (blocks.length === 0) {
+    container.innerHTML = '<span style="font-size:12px;color:var(--muted)">占い・霊能結果が記録されます</span>';
+    return;
+  }
+
+  container.innerHTML = blocks.map(b => `
+    <div class="divine-day-block">
+      <div class="divine-day-label">DAY ${b.day}</div>
+      ${b.entries.map(e => `
+        <div class="divine-entry">
+          <span class="divine-type-badge ${e.type}">${e.type === 'seer' ? '占' : '霊'}</span>
+          ${e.by ? `<span class="divine-by">${e.by}</span><span class="divine-arrow">›</span>` : ''}
+          <span class="divine-target">${e.targetName}</span>
+          <span class="divine-result-badge ${e.result}">${e.result === 'black' ? '黒' : '白'}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
 }
 
 function renderNooseCalc() {
