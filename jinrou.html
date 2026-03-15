@@ -540,7 +540,8 @@ function renderPlayers() {
     card.innerHTML = `
       <div class="player-number">#${p.id}</div>
       <input class="player-name-input" placeholder="名前" value="${esc(p.name)}"
-        oninput="updatePlayerName(${p.id-1},this.value)">
+        oninput="updatePlayerName(${p.id-1},this.value)"
+        onblur="onPlayerNameBlur(${p.id-1})">
       <div class="player-role-row">
         ${ROLES.map(r=>`<span class="role-badge ${r.cls}${p.role===r.key?' active':''}"
           onclick="toggleRole(${p.id-1},'${r.key}')">${r.label}</span>`).join('')}
@@ -780,7 +781,16 @@ function renderAliveList() {
 // --- Actions ---
 function updatePlayerName(idx,val) {
   state.players[idx].name = val;
-  renderAll();
+  // 入力中はDOMを再構築しない。サイドバーのテキスト表示だけ更新
+  renderAliveList();
+  renderCoSummary();
+  renderDivineLog();
+  renderExecuteLog();
+  renderBiteLog();
+}
+function onPlayerNameBlur(idx) {
+  // フォーカスが外れたタイミングでセレクトボックスの選択肢を更新
+  renderDayEvents();
 }
 function toggleRole(idx,role) {
   state.players[idx].role = state.players[idx].role===role?null:role;
